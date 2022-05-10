@@ -9,7 +9,8 @@ module.exports = {
                 .setDescription('Play a song')
                 .addStringOption((option) =>
                     option.setName('song')
-                        .setDescription('Song name'),
+                        .setDescription('Song name')
+                        .setRequired(true),
                 ),
         ),
 };

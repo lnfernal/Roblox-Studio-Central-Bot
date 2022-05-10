@@ -1,5 +1,5 @@
 const fs = require('node:fs');
-const { Client, Collection, Intents, StickerPack, MessageEmbed } = require('discord.js');
+const { Client, Collection, Intents, StickerPack, MessageEmbed, ReactionCollector } = require('discord.js');
 const { token } = require('./config.json');
 const { channel } = require('node:diagnostics_channel');
 const ytdl = require('ytdl-core');
@@ -16,7 +16,9 @@ const req = require('express/lib/request');
 const res = require('express/lib/response');
 const { Server } = require('node:http');
 const { RequestManager } = require('@discordjs/rest');
+const { join } = require('node:path');
 let bootups = 0;
+const bot_version = '[V1.1]';
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES] });
@@ -53,8 +55,15 @@ client.on('interactionCreate', async interaction => {
 	if (!command) return;
 
 	if (interaction.commandName === 'ping') {
-		await interaction.reply('Pong!');
-		console.log('Interaction replied x1');
+		let latency = client.ws.ping;
+		const embed = new MessageEmbed()
+		.setColor('#0fff4f')
+		.setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
+		.setTitle('Pong!')
+		.setDescription(`Bot latency: ${latency}ms`)
+		.setFooter({ text: `Roblox Studio Central Bot - ${bot_version}` })
+		.setTimestamp();
+		await interaction.reply({ content: `<@${interaction.user.id}>`, embeds: [embed] });
 	} else if (interaction.commandName === 'play') {
 		if (interaction.user.bot) return;
 		const AP = interaction.member.roles.cache.some(role => role.name === 'AP');
@@ -62,7 +71,7 @@ client.on('interactionCreate', async interaction => {
 			const song = interaction.options.getString('song');
 			if (AP) {
 				execute(interaction, song);
-				
+
 			} else {
 				interaction.reply({ content: 'Incorrect permissions! Role required: [AP]', ephemeral: true })
 			}
@@ -72,13 +81,14 @@ client.on('interactionCreate', async interaction => {
 		if (!interaction.member.roles.cache.some(role => role.name === 'AP')) return interaction.reply({ content: 'Incorrect permissions! Role required: [AP]', ephemeral: true });
 
 		if (interaction.member.roles.cache.some(role => role.name === 'AP')) {
+			let id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 			const type = interaction.options.getString('type');
 			const body = interaction.options.getString('body');
 			const robux = interaction.options.getString('robux');
 			const approvalChannel = interaction.guild.channels.cache.get('973360299744849970');
 			const embed = new MessageEmbed()
 				.setColor('#035efc')
-				.setAuthor({ name: 'Test name', iconURL: 'https://cdn.discordapp.com/icons/762045185097203724/07279ea968d7fd561a53d7ee4f70ff15.png?size=4096', url: 'https://robloxstudiocentral.xyz' })
+				.setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL(), url: 'https://robloxstudiocentral.xyz' })
 				.setTitle('Marketplace Post')
 				.setDescription('Your post has been sent for approval! You will be pinged in the appropriate channel when it has been approved, or you will receive a DM if it was denied.')
 				.addFields([
@@ -99,11 +109,17 @@ client.on('interactionCreate', async interaction => {
 						value: 'In development'
 					},
 				])
-				.setFooter({ text: 'Roblox Studio Central Marketplace' })
+				.setFooter({ text: `Roblox Studio Central Marketplace | ID: ${id}` })
 				.setTimestamp();
 
 			interaction.reply({ content: `<@${interaction.member.user.id}>`, embeds: [embed], ephemeral: true });
-			approvalChannel.send({ content: `New post approval from: ${interaction.member.user.username}`, embeds: [embed] })
+			approvalChannel.send({ content: `New post approval from: <@${interaction.member.user.id}>`, embeds: [embed] });
+
+			fs.writeFile('./posts.json', `{"${id}"}`, err => {
+				if (err) {
+					console.log(err);
+				}
+			})
 		}
 	}
 });
@@ -154,7 +170,16 @@ async function execute(message, song) {
 				subscription.unsubscribe();
 			});
 
-			await message.reply(`:thumbsup: Now playing ***${video.title}***`);
+			const embed = new MessageEmbed()
+			.setColor('#1c64ff')
+			.setAuthor({ name: message.user.tag, iconURL: message.user.avatarURL() })
+			.setTitle('Now Playing...')
+			.setDescription(`👍 Now playing ***${video.title}***`)
+			.setThumbnail(video.image)
+			.setFooter({ text: `Roblox Studio Central Bot - ${bot_version}` })
+			.setTimestamp();
+
+			await message.reply({ content: `<@${message.user.id}>`, embeds: [embed] });
 		} else {
 			message.reply('No video results found');
 		}
