@@ -16,6 +16,7 @@ const req = require('express/lib/request');
 const res = require('express/lib/response');
 const { Server } = require('node:http');
 const { RequestManager } = require('@discordjs/rest');
+let bootups = 0;
 
 // Create a new client instance
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES] });
@@ -74,7 +75,7 @@ client.on('interactionCreate', async interaction => {
 			const type = interaction.options.getString('type');
 			const body = interaction.options.getString('body');
 			const robux = interaction.options.getString('robux');
-			const approvalChannel = interaction.channels.cache.some(c => c.name === 'approval');
+			const approvalChannel = interaction.guild.channels.cache.get('973360299744849970');
 			const embed = new MessageEmbed()
 				.setColor('#035efc')
 				.setAuthor({ name: 'Test name', iconURL: 'https://cdn.discordapp.com/icons/762045185097203724/07279ea968d7fd561a53d7ee4f70ff15.png?size=4096', url: 'https://robloxstudiocentral.xyz' })
@@ -102,6 +103,7 @@ client.on('interactionCreate', async interaction => {
 				.setTimestamp();
 
 			interaction.reply({ content: `<@${interaction.member.user.id}>`, embeds: [embed], ephemeral: true });
+			approvalChannel.send({ content: `New post approval from: ${interaction.member.user.username}`, embeds: [embed] })
 		}
 	}
 });
